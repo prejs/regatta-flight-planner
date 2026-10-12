@@ -14,8 +14,8 @@
     "test": "tsx --test src/solver/*.test.ts",
     "test:determinism": "playwright test"
   },
-  "author": "",
-  "license": "ISC",
+  "author": "@prejs",
+  "license": "MIT",
   "dependencies": {
     "@thepassle/app-tools": "^0.9.12",
     "lit": "^3.2.1",
