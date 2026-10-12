@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Solver determinism check</title>
+</head>
+<body>
+  <!-- Dev-only page driven by tests/determinism.spec.ts. Not part of the app build. -->
+  <script type="module">
+    import { solve } from '../src/solver/solve.ts';
+    window.runSolver = (input) => {
+      const s = solve(input);
+      return { checksum: s.checksum, metrics: s.metrics };
+    };
+    window.solverReady = true;
+  </script>
+</body>
+</html>

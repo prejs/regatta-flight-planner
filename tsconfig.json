@@ -24,6 +24,6 @@
           "vite/client"
       ]
   },
-  "include": ["src/**/*.ts", "scripts/**/*.ts", "router.d.ts"],
+  "include": ["src/**/*.ts", "scripts/**/*.ts", "tests/**/*.ts", "playwright.config.ts", "router.d.ts"],
   "exclude": ["node_modules"]
 }
