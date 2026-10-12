@@ -1,6 +1,7 @@
 {
   "name": "regatta-flight-planner",
   "version": "0.0.1",
+  "type": "module",
   "description": "Fair flight plans for league-style fleet regattas, as an offline PWA",
   "main": "index.js",
   "scripts": {
