@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Source for every PNG icon in this folder: regenerate with `npm run icons`. -->
+  <defs>
+    <linearGradient id="bg" x1="0.1" y1="0.9" x2="0.85" y2="0.1">
+      <stop offset="0" stop-color="#0072E5"/>
+      <stop offset="1" stop-color="#6A00A8"/>
+    </linearGradient>
+  </defs>
+  <circle cx="256" cy="256" r="256" fill="url(#bg)"/>
+  <!-- Three sails, nearest first: flat foot, luff hollowed by the wind, leech bowing aft.
+       Each is heeled 5° around the middle of its foot; farther boats sit higher and fade. -->
+  <g fill="#fff">
+    <path transform="rotate(-5 169 384)" d="M97 384L241 384Q228.8 264 262.6 144Q148.1 252 97 384Z"/>
+    <path transform="rotate(-5 300 346)" opacity="0.9" d="M249 346L351 346Q342.3 261 366.3 176Q285.2 252.5 249 346Z"/>
+    <path transform="rotate(-5 395 308)" opacity="0.8" d="M359 308L431 308Q424.9 248 441.8 188Q384.6 242 359 308Z"/>
+  </g>
+</svg>
