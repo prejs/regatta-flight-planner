@@ -7,7 +7,6 @@ if (!(globalThis as any).URLPattern) {
 }
 
 import { Router } from '@thepassle/app-tools/router.js';
-import { lazy } from '@thepassle/app-tools/router/plugins/lazy.js';
 
 // @ts-ignore
 import { title } from '@thepassle/app-tools/router/plugins/title.js';
@@ -22,14 +21,6 @@ export const router = new Router({
         path: resolveRouterPath(),
         title: 'Home',
         render: () => html`<app-home></app-home>`
-      },
-      {
-        path: resolveRouterPath('about'),
-        title: 'About',
-        plugins: [
-          lazy(() => import('./pages/app-about/app-about.js')),
-        ],
-        render: () => html`<app-about></app-about>`
       }
     ]
   });

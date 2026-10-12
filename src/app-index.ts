@@ -28,7 +28,7 @@ export class AppIndex extends LitElement {
   }
 
   render() {
-    // router config can be round in src/router.ts
+    // router config can be found in src/router.ts
     return router.render();
   }
 }

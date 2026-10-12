@@ -2,10 +2,9 @@ import { LitElement, css, html } from 'lit';
 import { property, customElement } from 'lit/decorators.js';
 import { resolveRouterPath } from '../router';
 
-import '@shoelace-style/shoelace/dist/components/button/button.js';
 @customElement('app-header')
 export class AppHeader extends LitElement {
-  @property({ type: String }) title = 'PWA Starter';
+  @property({ type: String }) title = 'Regatta Flight Planner';
 
   @property({ type: Boolean}) enableBack: boolean = false;
 
@@ -61,9 +60,7 @@ export class AppHeader extends LitElement {
       <header>
 
         <div id="back-button-block">
-          ${this.enableBack ? html`<sl-button size="small" href="${resolveRouterPath()}">
-            Back
-          </sl-button>` : null}
+          ${this.enableBack ? html`<a href="${resolveRouterPath()}">Back</a>` : null}
 
           <h1>${this.title}</h1>
         </div>
