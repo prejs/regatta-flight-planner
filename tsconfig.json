@@ -19,10 +19,11 @@
       "useDefineForClassFields": false,
       "isolatedModules": true,
       "types": [
+          "node",
           "vite-plugin-pwa/client",
           "vite/client"
       ]
   },
-  "include": ["src/**/*.ts", "router.d.ts"],
+  "include": ["src/**/*.ts", "scripts/**/*.ts", "router.d.ts"],
   "exclude": ["node_modules"]
 }
