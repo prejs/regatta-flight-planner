@@ -14,7 +14,7 @@ Search quality results so far are in [docs/solver-findings.md](docs/solver-findi
 
 ## Development
 
-Requires Node 22 or newer (CI uses 24).
+Requires Node 22.12 or newer (CI uses 24).
 
 ```sh
 npm install
@@ -34,7 +34,7 @@ It prints the flights, idle boats and keepers, meeting and boat spreads, the pla
 
 ```sh
 npm test                  # solver unit tests
-npm run test:determinism  # same checksum in Chromium, Firefox and WebKit as in Node, also through the worker
+npm run test:determinism  # browser tests: same checksum as Node, the app flow, and offline use of the build
 ```
 
 The determinism check runs in CI on Linux and macOS. Run `npx playwright install` once to get the browsers locally.

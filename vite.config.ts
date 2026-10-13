@@ -14,18 +14,24 @@ export default defineConfig({
   plugins: [
     VitePWA({
       strategies: "injectManifest",
+      srcDir: "src",
+      filename: "sw.ts",
       injectManifest: {
-        swSrc: 'public/sw.js',
-        swDest: 'dist/sw.js',
-        globDirectory: 'dist',
+        // Only what the page itself loads. The manifest's large icons are fetched
+        // by the OS when the app is installed, which needs a connection anyway.
         globPatterns: [
-          '**/*.{html,js,css,json,png,svg}',
+          '**/*.{html,js,css,json,svg}',
+          'assets/icons/48x48.png',
+          'assets/icons/apple-touch-icon.png',
         ],
       },
+      // Registered in src/app-index.ts, which also shows the update prompt.
       injectRegister: false,
+      registerType: "prompt",
       manifest: false,
+      // No service worker in dev: it would serve stale modules. Offline is tested on the build.
       devOptions: {
-        enabled: true
+        enabled: false
       }
     })
   ]

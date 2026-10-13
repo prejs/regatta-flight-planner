@@ -1,0 +1,35 @@
+# Keeps npm packages (Workbox in the service worker among them) and the
+# GitHub Actions in CI current. Related packages update together in one PR.
+#
+# Disarmed for now: open-pull-requests-limit 0 stops version-update PRs.
+# Security updates are separate (repository settings) and not affected.
+# To arm, set the limits back (5 for npm, the default 5 for actions).
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 0
+    groups:
+      # Service worker and its build plugin: Workbox packages must share one version.
+      pwa:
+        patterns:
+          - "workbox-*"
+          - "vite-plugin-pwa"
+      lit:
+        patterns:
+          - "lit"
+          - "@lit/*"
+      # Remaining minor and patch updates as one PR; majors stay separate for review.
+      minor-and-patch:
+        update-types:
+          - minor
+          - patch
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 0

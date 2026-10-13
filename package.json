@@ -19,20 +19,20 @@
   "author": "@prejs",
   "license": "MIT",
   "dependencies": {
-    "@thepassle/app-tools": "^0.9.12",
-    "lit": "^3.2.1",
-    "urlpattern-polyfill": "^10.0.0",
-    "workbox-build": "^7.1.1",
-    "workbox-core": "^7.1.0",
-    "workbox-precaching": "^7.1.0"
+    "@thepassle/app-tools": "^1.2.0",
+    "lit": "^3.3.3",
+    "urlpattern-polyfill": "^10.1.0",
+    "workbox-precaching": "^7.4.1",
+    "workbox-window": "^7.4.1"
   },
   "devDependencies": {
     "@playwright/test": "^1.64.0",
     "@types/node": "^26.6.5",
     "tsx": "^4.23.15",
-    "typescript": "^5.6.2",
-    "vite": "^5.4.8",
-    "vite-plugin-pwa": "^0.20.5"
+    "typescript": "^7.0.2",
+    "vite": "^8.3.4",
+    "vite-plugin-pwa": "^2.0.0",
+    "workbox-build": "^7.4.1"
   },
   "prettier": {
     "tabWidth": 2,

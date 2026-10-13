@@ -1,8 +1,9 @@
-import { LitElement, css } from 'lit';
+import { LitElement, css, html } from 'lit';
 import { customElement } from 'lit/decorators.js';
 
 import './pages/app-home';
 import './components/header';
+import './components/update-banner';
 import './styles/global.css';
 import { router } from './router';
 
@@ -29,6 +30,6 @@ export class AppIndex extends LitElement {
 
   render() {
     // router config can be found in src/router.ts
-    return router.render();
+    return html`${router.render()}<update-banner></update-banner>`;
   }
 }
