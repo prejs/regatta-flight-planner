@@ -43,6 +43,27 @@ Version 0 (1M iterations), link `#0.t17b7.f9-15.oOGBRK.K7QX2M` (17 teams, 7 boat
 The phone is about 8 times slower than the laptop. Fifty seconds is not acceptable for an interactive plan, and the live solver needs rework before the app depends on it.
 The fixed iteration count stays (determinism), so the fix has to come from fewer iterations doing more (better moves, a structured start), a faster inner loop, or templates.
 
+### Where the time goes
+
+CPU profile in Node of the same plan (1M iterations, 5.6 s):
+
+| Function | Share of time |
+|---|---|
+| `PlanState.scan` (G, R and K) | 71% |
+| `Rng.int` | 9% |
+| `PlanState.addRace` (O and B) | 5% |
+| everything else | 15% |
+
+Every iteration calls `metrics()`, and `scan()` walks the whole plan to recompute G, R and K, even when a move touches one flight.
+O and B are already incremental and cheap.
+
+Leads, all of which keep the plan identical:
+
+- **Lazy tiers.** Compare tier by tier and compute G, R and K only when the tiers before them tie. With O first, most moves are decided on O alone. This gives the same accept and reject decisions as today.
+- **Local rescans.** A move in flight f changes G, R and K only near flight f (its races, the seams on both sides, the keeper of the next race). Rescan that window instead of the whole plan.
+
+Removing the full scan alone gives at most about 3.4 times, so the phone target of about 10 times still needs better moves or a structured start.
+
 ## Conclusions
 
 - Plain annealing with the three spec moves does not reach spread 1 for the 18-team league case within a phone-sized budget.

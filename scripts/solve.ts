@@ -1,6 +1,7 @@
 // Solver prototype CLI.
 //   npx tsx scripts/solve.ts --teams 18 --boats 6 --flights 16 --iterations 2000000
 import { DEFAULT_ORDER, type ObjectiveCode, type PlanInput } from '../src/solver/model';
+import { idleBoats } from '../src/solver/schedule';
 import { solve, type Solution } from '../src/solver/solve';
 
 function args(): Record<string, string> {
@@ -74,21 +75,15 @@ const boatCounts = boatUse.flatMap((row) => row.slice(0, d.active));
 if (a.quiet === undefined) {
   const name = (t: number) => `T${t + 1}`;
   let n = 0;
-  const prevUser = new Array<number>(d.boats).fill(-1);
+  const idle = idleBoats(plan, d, input.idleBoatOnWater);
   for (const [f, flight] of plan.entries()) {
     console.log(`Flight ${f + 1}`);
     for (const [r, race] of flight.entries()) {
-      const used = new Map(race.boats.map((b, i) => [b, race.teams[i]]));
       const sailing = race.teams.map((t, i) => `${name(t)}→B${race.boats[i] + 1}`).join('  ');
-      const idle: string[] = [];
-      for (let b = 0; b < d.active; b++) {
-        if (used.has(b)) continue;
-        const k = prevUser[b];
-        idle.push(input.idleBoatOnWater && k >= 0 && !race.teams.includes(k) ? `B${b + 1} idle, kept by ${name(k)}` : `B${b + 1} idle`);
-      }
-      console.log(`  Race ${r + 1} (#${++n})  ${sailing}${idle.length ? `   [${idle.join('; ')}]` : ''}`);
-      prevUser.fill(-1);
-      used.forEach((t, b) => (prevUser[b] = t));
+      const notes = idle[f][r].map(({ boat, keeper }) =>
+        keeper >= 0 ? `B${boat + 1} idle, kept by ${name(keeper)}` : `B${boat + 1} idle`
+      );
+      console.log(`  Race ${r + 1} (#${++n})  ${sailing}${notes.length ? `   [${notes.join('; ')}]` : ''}`);
     }
   }
   console.log();

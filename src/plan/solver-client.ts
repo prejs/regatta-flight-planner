@@ -9,8 +9,12 @@ export interface SolveRequest {
 }
 
 export type SolveResponse =
-  | { id: number; ok: true; solution: Solution; ms: number }
-  | { id: number; ok: false; error: string };
+  | { id: number; type: 'progress'; done: number; total: number }
+  | { id: number; type: 'done'; solution: Solution; ms: number }
+  | { id: number; type: 'error'; error: string };
+
+/** Share of the solve done so far, from 0 to 1. */
+export type OnProgress = (fraction: number) => void;
 
 export interface SolveResult {
   solution: Solution;
@@ -29,15 +33,20 @@ export class SupersededError extends Error {
 export class PlanSolver {
   private worker?: Worker;
   private nextId = 0;
-  private pending?: { id: number; resolve: (r: SolveResult) => void; reject: (e: Error) => void };
+  private pending?: {
+    id: number;
+    resolve: (r: SolveResult) => void;
+    reject: (e: Error) => void;
+    onProgress?: OnProgress;
+  };
 
   /** Solves the plan in a URL fragment. Rejects with the decode or solve error. */
-  solve(fragment: string): Promise<SolveResult> {
+  solve(fragment: string, onProgress?: OnProgress): Promise<SolveResult> {
     if (this.pending) this.terminate();
     const worker = (this.worker ??= this.start());
     const id = ++this.nextId;
     return new Promise<SolveResult>((resolve, reject) => {
-      this.pending = { id, resolve, reject };
+      this.pending = { id, resolve, reject, onProgress };
       worker.postMessage({ id, fragment } satisfies SolveRequest);
     });
   }
@@ -55,8 +64,12 @@ export class PlanSolver {
     worker.onmessage = ({ data }: MessageEvent<SolveResponse>) => {
       const job = this.pending;
       if (!job || job.id !== data.id) return;
+      if (data.type === 'progress') {
+        job.onProgress?.(data.done / data.total);
+        return;
+      }
       this.pending = undefined;
-      if (data.ok) job.resolve({ solution: data.solution, ms: data.ms });
+      if (data.type === 'done') job.resolve({ solution: data.solution, ms: data.ms });
       else job.reject(new Error(data.error));
     };
     worker.onerror = (e) => {

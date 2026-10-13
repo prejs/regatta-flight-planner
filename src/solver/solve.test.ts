@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import { DEFAULT_ORDER, derive, type PlanInput } from './model';
+import { idleBoats } from './schedule';
 import { solve } from './solve';
 
 const base: PlanInput = {
@@ -51,3 +52,33 @@ test('a pinned checksum catches accidental algorithm changes', () => {
 });
 
 const PINNED_CHECKSUM = '843F';
+
+test('progress reaches the total and does not change the plan', () => {
+  const calls: [number, number][] = [];
+  const { checksum } = solve({ ...base, iterations: 200_000 }, (done, total) => calls.push([done, total]));
+  assert.equal(checksum, solve({ ...base, iterations: 200_000 }).checksum);
+  const [done, total] = calls[calls.length - 1];
+  assert.equal(done, total);
+  assert.ok(calls.every(([d], i) => i === 0 || d > calls[i - 1][0]));
+});
+
+test('idle boats name the previous crew as keeper', () => {
+  const { plan, derived } = solve(base);
+  const idle = idleBoats(plan, derived, true);
+  let keepers = 0;
+  plan.forEach((flight, f) =>
+    flight.forEach((race, r) => {
+      assert.equal(idle[f][r].length, derived.active - race.teams.length);
+      for (const { boat, keeper } of idle[f][r]) {
+        assert.ok(!race.boats.includes(boat));
+        if (keeper < 0) continue;
+        keepers++;
+        const prev = r > 0 ? flight[r - 1] : plan[f - 1]?.at(-1);
+        assert.equal(prev?.teams[prev.boats.indexOf(boat)], keeper);
+        assert.ok(!race.teams.includes(keeper));
+      }
+    })
+  );
+  assert.ok(keepers > 0);
+  assert.ok(idleBoats(plan, derived, false).flat(2).every((x) => x.keeper === -1));
+});

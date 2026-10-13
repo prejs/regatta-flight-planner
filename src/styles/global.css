@@ -5,6 +5,8 @@
 */
 :root {
   --font-family: sans-serif;
+  /* Native form controls follow the light or dark theme. */
+  color-scheme: light dark;
 }
 
 html, body {

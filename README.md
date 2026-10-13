@@ -2,7 +2,7 @@
 
 Generates a random but fair flight plan for a league-style fleet regatta, where more teams than boats share the water and swap boats between races. It is built as an offline-first PWA, and the plan is meant to live in a shareable URL, not on a server.
 
-**Status: early.** The plan generator (the solver) is a working prototype with a command line. The app decodes a plan link, solves it in a Web Worker and shows the checksum and solve time, for example `/#0.t17b7.f9-15.oOGBRK.K7QX2M`. The input form and plan views come next.
+**Status: early.** The plan generator (the solver) is a working prototype with a command line. In the app, a form builds the plan link, for example `/#0.t17b7.f9-15.oOGBRK.K7QX2M`. The link is solved in a Web Worker with a progress bar, and the Flight view shows each flight with idle boats and keepers. The live solver is too slow on phones for now (about 50 s on an iPhone 17, see the findings). The team, boat and stats views come next.
 
 ## How a plan works
 

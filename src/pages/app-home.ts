@@ -1,19 +1,33 @@
 import { LitElement, css, html } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 
+import '../components/flight-view';
+import '../components/plan-form';
 import { PlanSolver, SupersededError, type SolveResult } from '../plan/solver-client';
+import { decodePlanUrl, type PlanSpec } from '../plan/url';
 import { router } from '../router';
+import { idleBoats, type IdleBoat } from '../solver/schedule';
 import { styles } from '../styles/shared-styles';
 
-const EXAMPLE = '0.t17b7.f9-15.oOGBRK.K7QX2M';
-
-// Placeholder until the input form and flight view exist: solves the plan in
-// the URL fragment and shows its checksum and solve time.
+// The plan lives in the URL fragment. The form writes it; a change of the
+// fragment (form, link, back button) solves it again.
 @customElement('app-home')
 export class AppHome extends LitElement {
   static styles = [
     styles,
     css`
+      details {
+        margin-bottom: 16px;
+      }
+      summary {
+        cursor: pointer;
+        font-weight: bold;
+        margin-bottom: 12px;
+      }
+      progress {
+        width: 100%;
+        max-width: 480px;
+      }
       dl {
         display: grid;
         grid-template-columns: max-content 1fr;
@@ -27,7 +41,10 @@ export class AppHome extends LitElement {
   ];
 
   @state() private status: 'idle' | 'solving' | 'done' | 'error' = 'idle';
+  @state() private spec?: PlanSpec;
   @state() private result?: SolveResult;
+  @state() private idle: IdleBoat[][][] = [];
+  @state() private progress = 0;
   @state() private error = '';
 
   private solver = new PlanSolver();
@@ -54,14 +71,25 @@ export class AppHome extends LitElement {
     const fragment = location.hash.slice(1);
     if (fragment === this.fragment) return;
     this.fragment = fragment;
+    this.result = undefined;
     if (!fragment) {
       this.solver.terminate();
+      this.spec = undefined;
       this.status = 'idle';
       return;
     }
-    this.status = 'solving';
     try {
-      this.result = await this.solver.solve(fragment);
+      this.spec = decodePlanUrl(fragment).plan;
+    } catch {
+      this.spec = undefined;
+    }
+    this.status = 'solving';
+    this.progress = 0;
+    try {
+      const result = await this.solver.solve(fragment, (p) => (this.progress = p));
+      const { plan, derived } = result.solution;
+      this.idle = idleBoats(plan, derived, this.spec?.idleBoatOnWater ?? true);
+      this.result = result;
       this.status = 'done';
     } catch (e) {
       if (e instanceof SupersededError) return;
@@ -70,12 +98,20 @@ export class AppHome extends LitElement {
     }
   }
 
+  private onSubmit(e: CustomEvent<string>) {
+    if (e.detail === this.fragment) return;
+    location.hash = e.detail;
+  }
+
   render() {
     return html`
       <app-header></app-header>
 
       <main>
-        <h2>Plan a regatta</h2>
+        <details ?open=${this.status !== 'done'}>
+          <summary>Plan settings</summary>
+          <plan-form .value=${this.spec} @plan-submit=${this.onSubmit}></plan-form>
+        </details>
         ${this.renderStatus()}
       </main>
     `;
@@ -84,21 +120,21 @@ export class AppHome extends LitElement {
   private renderStatus() {
     switch (this.status) {
       case 'idle':
-        return html`<p>Open a plan link, for example <a href="#${EXAMPLE}">#${EXAMPLE}</a>.</p>`;
+        return '';
       case 'solving':
-        return html`<p>Solving…</p>`;
+        return html`<p>Solving… ${Math.round(this.progress * 100)}%</p>
+          <progress max="1" .value=${this.progress}></progress>`;
       case 'error':
         return html`<p>This link has no valid plan: ${this.error}</p>`;
       case 'done': {
         const { solution, ms } = this.result!;
-        const d = solution.derived;
         return html`
           <dl>
             <dt>Checksum</dt><dd>#${solution.checksum}</dd>
-            <dt>Solve time</dt><dd>${ms} ms</dd>
-            <dt>Plan</dt><dd>${d.teams} teams, ${d.active} of ${d.boats} boats, ${solution.plan.length} flights of ${d.races} races</dd>
+            <dt>Solve time</dt><dd>${(ms / 1000).toFixed(1)} s</dd>
             <dt>Score</dt><dd>${Object.entries(solution.metrics).map(([k, v]) => `${k}=${v}`).join(' ')}</dd>
           </dl>
+          <flight-view .plan=${solution.plan} .derived=${solution.derived} .idle=${this.idle}></flight-view>
         `;
       }
     }

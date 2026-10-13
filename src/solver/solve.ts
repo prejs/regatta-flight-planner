@@ -10,12 +10,18 @@ export interface Solution {
   checksum: string;
 }
 
+/** Called now and then with the iterations done so far. It never changes the plan. */
+export type Progress = (done: number, total: number) => void;
+
+/** Iterations between progress calls. */
+const PROGRESS_STEP = 1 << 16;
+
 /**
  * Phase A: simulated annealing over flights 1..minFlights jointly.
  * Phase B: each later flight is optimised alone against the frozen history.
  * Same input, same plan: integer scores, a fixed iteration count, a seeded PRNG.
  */
-export function solve(input: PlanInput): Solution {
+export function solve(input: PlanInput, onProgress?: Progress): Solution {
   const d = derive(input);
   if (input.minFlights < 1 || input.maxFlights < input.minFlights) {
     throw new Error('Need 1 <= minFlights <= maxFlights');
@@ -24,13 +30,17 @@ export function solve(input: PlanInput): Solution {
   const plan: Plan = [];
   const state = new PlanState(d, plan, d.races >= 3, input.idleBoatOnWater);
 
-  for (let f = 0; f < input.minFlights; f++) addFlight(state, rng);
-  anneal(state, input, 0, input.minFlights, input.iterations, rng);
-
   const extension = Math.max(2000, Math.floor(input.iterations / input.minFlights));
+  const total = input.iterations + extension * (input.maxFlights - input.minFlights);
+  let done = 0;
+  const tick = onProgress && ((n: number) => onProgress((done += n), total));
+
+  for (let f = 0; f < input.minFlights; f++) addFlight(state, rng);
+  anneal(state, input, 0, input.minFlights, input.iterations, rng, tick);
+
   for (let f = input.minFlights; f < input.maxFlights; f++) {
     addFlight(state, rng);
-    anneal(state, input, f, f + 1, extension, rng);
+    anneal(state, input, f, f + 1, extension, rng, tick);
   }
 
   return {
@@ -101,15 +111,21 @@ function anneal(
   lo: number,
   hi: number,
   iterations: number,
-  rng: Rng
+  rng: Rng,
+  tick?: (n: number) => void
 ): void {
   const { races } = state.d;
   const order = input.order;
   // Temperature in 1/16 units of a score step.
   const T0 = (input.startTemp ?? 2) * 16;
   let cur = tuple(state.metrics(), order);
+  let reported = 0;
 
   for (let it = 0; it < iterations; it++) {
+    if (tick && it - reported === PROGRESS_STEP) {
+      tick(PROGRESS_STEP);
+      reported = it;
+    }
     const temp = Math.floor((T0 * (iterations - it)) / iterations);
     const flight = state.plan[lo + rng.int(hi - lo)];
     const kind = rng.int(100);
@@ -157,6 +173,7 @@ function anneal(
     if (accept) cur = next;
     else undo();
   }
+  tick?.(iterations - reported);
 }
 
 /** FNV-1a over the plan, folded to 16 bits. */
