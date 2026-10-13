@@ -1,7 +1,10 @@
 import { LitElement, css, html } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 
+import { Hash, Scale, Settings2, Timer, TriangleAlert } from 'lucide';
+
 import '../components/flight-view';
+import { icon } from '../components/icon';
 import '../components/plan-form';
 import { PlanSolver, SupersededError, type SolveResult } from '../plan/solver-client';
 import { decodePlanUrl, type PlanSpec } from '../plan/url';
@@ -23,6 +26,10 @@ export class AppHome extends LitElement {
         cursor: pointer;
         font-weight: bold;
         margin-bottom: 12px;
+      }
+      .icon {
+        vertical-align: -0.15em;
+        margin-right: 6px;
       }
       progress {
         width: 100%;
@@ -109,8 +116,8 @@ export class AppHome extends LitElement {
 
       <main>
         <details ?open=${this.status !== 'done'}>
-          <summary>Plan settings</summary>
-          <plan-form .value=${this.spec} @plan-submit=${this.onSubmit}></plan-form>
+          <summary>${icon(Settings2)}Plan settings</summary>
+          <plan-form .value=${this.spec} ?solving=${this.status === 'solving'} @plan-submit=${this.onSubmit}></plan-form>
         </details>
         ${this.renderStatus()}
       </main>
@@ -125,14 +132,14 @@ export class AppHome extends LitElement {
         return html`<p>Solving… ${Math.round(this.progress * 100)}%</p>
           <progress max="1" .value=${this.progress}></progress>`;
       case 'error':
-        return html`<p>This link has no valid plan: ${this.error}</p>`;
+        return html`<p>${icon(TriangleAlert)}This link has no valid plan: ${this.error}</p>`;
       case 'done': {
         const { solution, ms } = this.result!;
         return html`
           <dl>
-            <dt>Checksum</dt><dd>#${solution.checksum}</dd>
-            <dt>Solve time</dt><dd>${(ms / 1000).toFixed(1)} s</dd>
-            <dt>Score</dt><dd>${Object.entries(solution.metrics).map(([k, v]) => `${k}=${v}`).join(' ')}</dd>
+            <dt>${icon(Hash)}Checksum</dt><dd>#${solution.checksum}</dd>
+            <dt>${icon(Timer)}Solve time</dt><dd>${(ms / 1000).toFixed(1)} s</dd>
+            <dt>${icon(Scale)}Score</dt><dd>${Object.entries(solution.metrics).map(([k, v]) => `${k}=${v}`).join(' ')}</dd>
           </dl>
           <flight-view .plan=${solution.plan} .derived=${solution.derived} .idle=${this.idle}></flight-view>
         `;

@@ -39,6 +39,9 @@ test('active boats are written only when they differ from the largest race size'
   const { plan } = decodePlanUrl('0.t17b7a6.f9-15.oOGBRK.K7QX2M');
   assert.equal(plan.activeBoats, 6);
   assert.equal(encodePlanUrl({ plan, labels: {} }), '0.t17b7.f9-15.oOGBRK.K7QX2M');
+  const fewer = decodePlanUrl('0.t17b7a5.f9-15.oOGBRK.K7QX2M').plan;
+  assert.equal(fewer.activeBoats, 5);
+  assert.equal(encodePlanUrl({ plan: fewer, labels: {} }), '0.t17b7a5.f9-15.oOGBRK.K7QX2M');
   const noSpare = '0.t17b7a7.f9-15.oOGBRK.K7QX2M';
   assert.equal(decodePlanUrl(noSpare).plan.activeBoats, 7);
   assert.equal(encodePlanUrl(decodePlanUrl(noSpare)), noSpare);
@@ -54,7 +57,7 @@ test('maps to solver input with the version parameters', () => {
 test('rejects invalid links', () => {
   const bad = [
     '1.t17b7a6.f9-15.oOGBR.K7QX2M', // unknown version
-    '0.t17b7a5.f9-15.oOGBR.K7QX2M', // fewer active boats than the largest race
+    '0.t17b7a1.f9-15.oOGBR.K7QX2M', // fewer than 2 boats in use
     '0.t17b7a8.f9-15.oOGBR.K7QX2M', // more active boats than boats
     '0.t17b17.f9-15.oOGBR.K7QX2M', // more boats than palette colours
     '0.t017b7.f9-15.oOGBR.K7QX2M', // leading zero

@@ -1,6 +1,9 @@
 import { LitElement, css, html } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
+import { RefreshCw } from 'lucide';
 import { registerSW } from 'virtual:pwa-register';
+
+import { icon } from './icon';
 
 /**
  * Registers the service worker. When a new version is installed and waiting,
@@ -32,6 +35,10 @@ export class UpdateBanner extends LitElement {
       font: inherit;
       padding: 6px 12px;
     }
+    .icon {
+      vertical-align: -0.15em;
+      margin-right: 4px;
+    }
   `;
 
   @state() private waiting = false;
@@ -48,7 +55,7 @@ export class UpdateBanner extends LitElement {
     if (!this.waiting) return '';
     return html`<div role="status">
       <span>A new version is available.</span>
-      <button @click=${() => this.updateSW?.(true)}>Reload</button>
+      <button @click=${() => this.updateSW?.(true)}>${icon(RefreshCw)}Reload</button>
       <button aria-label="Later" @click=${() => (this.waiting = false)}>Later</button>
     </div>`;
   }

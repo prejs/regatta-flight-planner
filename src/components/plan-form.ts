@@ -1,9 +1,12 @@
 import { LitElement, css, html } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 
+import { Anchor, ChevronDown, ChevronUp, Cog, Dices, Flag, KeyRound, ListOrdered, Sailboat, Ship, Users } from 'lucide';
+
 import { newSeed } from '../plan/seed';
 import { CURRENT_VERSION, encodePlanUrl, MAX_BOATS, MAX_FLIGHTS, MAX_TEAMS, type PlanSpec } from '../plan/url';
 import { DEFAULT_ORDER, derive, type Derived, type ObjectiveCode } from '../solver/model';
+import { icon } from './icon';
 
 const OBJECTIVE_NAMES: Record<ObjectiveCode, string> = {
   O: 'Opponent balance',
@@ -43,6 +46,27 @@ export class PlanForm extends LitElement {
       display: grid;
       gap: 4px;
       font-size: 14px;
+    }
+    .icon {
+      vertical-align: -0.15em;
+      margin-right: 4px;
+      flex: none;
+    }
+    .icon.solo {
+      margin-right: 0;
+    }
+    .spin {
+      animation: spin 2s linear infinite;
+    }
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .spin {
+        animation: none;
+      }
     }
     input[type='number'],
     input[type='text'] {
@@ -115,14 +139,20 @@ export class PlanForm extends LitElement {
     .error {
       color: #e11a22;
     }
+    /* Boats in use while they follow the default. */
+    input.default {
+      color: GrayText;
+    }
   `;
 
   @property({ attribute: false }) value?: PlanSpec;
+  /** A plan is being solved: the Make plan cog turns. */
+  @property({ type: Boolean }) solving = false;
 
   @state() private teams = 17;
   @state() private boats = 7;
-  /** Empty means the default, the largest race size. */
-  @state() private activeBoats = '';
+  /** Undefined follows the default, the largest race size on all boats. */
+  @state() private activeBoats?: number;
   @state() private minFlights = 9;
   @state() private maxFlights = 15;
   @state() private idleBoatOnWater = true;
@@ -134,7 +164,7 @@ export class PlanForm extends LitElement {
       const v = this.value;
       this.teams = v.teams;
       this.boats = v.boats;
-      this.activeBoats = v.activeBoats === derive(v).active ? '' : String(v.activeBoats);
+      this.activeBoats = v.activeBoats === this.defaultActive(v.teams, v.boats) ? undefined : v.activeBoats;
       this.minFlights = v.minFlights;
       this.maxFlights = v.maxFlights;
       this.idleBoatOnWater = v.idleBoatOnWater;
@@ -149,7 +179,7 @@ export class PlanForm extends LitElement {
       const derived = derive({
         teams: this.teams,
         boats: this.boats,
-        activeBoats: this.activeBoats === '' ? undefined : Number(this.activeBoats),
+        activeBoats: this.activeBoats,
       });
       const active = activeObjectives(derived, this.idleBoatOnWater);
       const plan: PlanSpec = {
@@ -168,6 +198,22 @@ export class PlanForm extends LitElement {
     } catch (e) {
       return { error: (e as Error).message };
     }
+  }
+
+  /** Boats in use by default: the largest race on all boats. Undefined while teams or boats are invalid. */
+  private defaultActive(teams = this.teams, boats = this.boats): number | undefined {
+    try {
+      return derive({ teams, boats }).active;
+    } catch {
+      return undefined;
+    }
+  }
+
+  private setActive(e: Event) {
+    const v = (e.target as HTMLInputElement).value;
+    const n = v === '' ? undefined : Number(v);
+    // Back at the default: follow it again when teams or boats change.
+    this.activeBoats = n === this.defaultActive() ? undefined : n;
   }
 
   private move(i: number, by: -1 | 1) {
@@ -190,29 +236,29 @@ export class PlanForm extends LitElement {
     return html`
       <form @submit=${this.submit}>
         <div class="row">
-          <label>Teams
+          <label><span>${icon(Users)}Teams</span>
             <input type="number" min="2" max=${MAX_TEAMS} required .value=${String(this.teams)}
               @input=${num((n) => (this.teams = n))} />
           </label>
-          <label>Boats
+          <label><span>${icon(Sailboat)}Boats</span>
             <input type="number" min="2" max=${MAX_BOATS} required .value=${String(this.boats)}
               @input=${num((n) => (this.boats = n))} />
           </label>
         </div>
         <div class="row">
-          <label>Boats in use
-            <input type="number" min="2" max=${MAX_BOATS} .value=${this.activeBoats}
-              placeholder=${'derived' in built ? String(built.derived.active) : ''}
-              @input=${(e: Event) => (this.activeBoats = (e.target as HTMLInputElement).value)} />
+          <label><span>${icon(Ship)}Boats in use</span>
+            <input type="number" min="2" max=${Math.min(this.boats, MAX_BOATS)}
+              class=${this.activeBoats === undefined ? 'default' : ''}
+              .value=${String(this.activeBoats ?? this.defaultActive() ?? '')} @input=${this.setActive} />
           </label>
           <span></span>
         </div>
         <div class="row">
-          <label>Minimum flights
+          <label><span>${icon(Flag)}Minimum flights</span>
             <input type="number" min="1" max=${MAX_FLIGHTS} required .value=${String(this.minFlights)}
               @input=${num((n) => (this.minFlights = n))} />
           </label>
-          <label>Maximum flights
+          <label><span>${icon(Flag)}Maximum flights</span>
             <input type="number" min="1" max=${MAX_FLIGHTS} required .value=${String(this.maxFlights)}
               @input=${num((n) => (this.maxFlights = n))} />
           </label>
@@ -220,7 +266,7 @@ export class PlanForm extends LitElement {
         ${'derived' in built ? html`<p class="hint">${this.hint(built.derived)}</p>` : ''}
 
         <fieldset>
-          <legend>Idle boat</legend>
+          <legend>${icon(Anchor)}Idle boat</legend>
           <label><input type="radio" name="idle" .checked=${this.idleBoatOnWater}
             @change=${() => (this.idleBoatOnWater = true)} /> Stays on the water with a keeper</label>
           <label><input type="radio" name="idle" .checked=${!this.idleBoatOnWater}
@@ -228,30 +274,30 @@ export class PlanForm extends LitElement {
         </fieldset>
 
         <fieldset>
-          <legend>Objectives, most important first</legend>
+          <legend>${icon(ListOrdered)}Objectives, most important first</legend>
           <ol>
             ${this.order.map((code, i) => {
               const used = !('active' in built) || built.active.has(code);
               return html`<li class=${used ? '' : 'inactive'}>
                 <span>${OBJECTIVE_NAMES[code]}${used ? '' : ' (not used for these sizes)'}</span>
-                <button type="button" aria-label="Move up" ?disabled=${i === 0} @click=${() => this.move(i, -1)}>↑</button>
+                <button type="button" aria-label="Move up" ?disabled=${i === 0} @click=${() => this.move(i, -1)}>${icon(ChevronUp, 'icon solo')}</button>
                 <button type="button" aria-label="Move down" ?disabled=${i === this.order.length - 1}
-                  @click=${() => this.move(i, 1)}>↓</button>
+                  @click=${() => this.move(i, 1)}>${icon(ChevronDown, 'icon solo')}</button>
               </li>`;
             })}
           </ol>
         </fieldset>
 
-        <label>Seed
+        <label><span>${icon(KeyRound)}Seed</span>
           <div class="seed">
             <input type="text" maxlength="6" spellcheck="false" autocomplete="off" .value=${this.seed}
               @input=${(e: Event) => (this.seed = (e.target as HTMLInputElement).value)} />
-            <button type="button" @click=${() => (this.seed = newSeed())}>New seed</button>
+            <button type="button" @click=${() => (this.seed = newSeed())}>${icon(Dices)}New seed</button>
           </div>
         </label>
 
         ${'error' in built ? html`<p class="hint error">${built.error}</p>` : ''}
-        <button type="submit" ?disabled=${'error' in built}>Make plan</button>
+        <button type="submit" ?disabled=${'error' in built}>${icon(Cog, this.solving ? 'icon spin' : 'icon')}Make plan</button>
       </form>
     `;
   }

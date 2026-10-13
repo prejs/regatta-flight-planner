@@ -3,7 +3,10 @@ export type ObjectiveCode = 'O' | 'G' | 'B' | 'R' | 'K';
 export interface PlanInput {
   teams: number;
   boats: number;
-  /** Defaults to the largest race size. Other boats are spares. */
+  /**
+   * Boats in use; other boats are spares. When set, races per flight follow it
+   * (17 teams on 5 boats: 4 races). Defaults to the largest race size on all boats.
+   */
   activeBoats?: number;
   minFlights: number;
   maxFlights: number;
@@ -42,15 +45,15 @@ export interface Derived {
 }
 
 export function derive(input: Pick<PlanInput, 'teams' | 'boats' | 'activeBoats'>): Derived {
-  const { teams, boats } = input;
+  const { teams, boats, activeBoats } = input;
   if (teams < 2 || boats < 2) throw new Error('Need at least 2 teams and 2 boats');
-  const races = Math.ceil(teams / boats);
+  if (activeBoats !== undefined && (activeBoats < 2 || activeBoats > boats)) {
+    throw new Error(`Boats in use must be between 2 and ${boats}`);
+  }
+  // Races per flight follow the boats that can sail. The largest race then fits.
+  const races = Math.ceil(teams / (activeBoats ?? boats));
   const base = Math.floor(teams / races);
   const extra = teams % races;
   const sizes = Array.from({ length: races }, (_, i) => base + (i < extra ? 1 : 0));
-  const active = input.activeBoats ?? sizes[0];
-  if (active < sizes[0] || active > boats) {
-    throw new Error(`Active boats must be between ${sizes[0]} and ${boats}`);
-  }
-  return { teams, boats, races, active, sizes };
+  return { teams, boats, races, active: activeBoats ?? sizes[0], sizes };
 }

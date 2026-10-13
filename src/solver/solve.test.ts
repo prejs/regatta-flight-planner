@@ -23,6 +23,13 @@ test('derives race sizes for 17 teams on 7 boats', () => {
   assert.equal(d.active, 6);
 });
 
+test('fewer boats in use mean more races per flight', () => {
+  assert.deepEqual(derive({ ...base, activeBoats: 5 }).sizes, [5, 4, 4, 4]);
+  assert.deepEqual(derive({ ...base, activeBoats: 7 }).sizes, [6, 6, 5]);
+  assert.throws(() => derive({ ...base, activeBoats: 1 }));
+  assert.throws(() => derive({ ...base, activeBoats: 8 }));
+});
+
 test('plan satisfies the hard constraints', () => {
   const { plan, derived } = solve(base);
   assert.equal(plan.length, base.maxFlights);

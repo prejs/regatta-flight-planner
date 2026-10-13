@@ -21,6 +21,7 @@
   "dependencies": {
     "@thepassle/app-tools": "^1.2.0",
     "lit": "^3.3.3",
+    "lucide": "^1.56.0",
     "urlpattern-polyfill": "^10.1.0",
     "workbox-precaching": "^7.4.1",
     "workbox-window": "^7.4.1"

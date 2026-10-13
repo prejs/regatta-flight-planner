@@ -9,7 +9,9 @@ export default defineConfig({
     assetsDir: "code",
     target: ["esnext"],
     cssMinify: true,
-    lib: false
+    lib: false,
+    // Notices of bundled packages (Lit, Lucide, Workbox), served as /licenses.md.
+    license: { fileName: 'licenses.md' }
   },
   plugins: [
     VitePWA({
