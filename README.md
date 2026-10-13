@@ -2,7 +2,7 @@
 
 Generates a random but fair flight plan for a league-style fleet regatta, where more teams than boats share the water and swap boats between races. It is built as an offline-first PWA, and the plan is meant to live in a shareable URL, not on a server.
 
-**Status: early.** The plan generator (the solver) is a working prototype with a command line. The app itself is still a placeholder page.
+**Status: early.** The plan generator (the solver) is a working prototype with a command line. The app decodes a plan link, solves it in a Web Worker and shows the checksum and solve time, for example `/#0.t17b7.f9-15.oOGBRK.K7QX2M`. The input form and plan views come next.
 
 ## How a plan works
 
@@ -34,7 +34,7 @@ It prints the flights, idle boats and keepers, meeting and boat spreads, the pla
 
 ```sh
 npm test                  # solver unit tests
-npm run test:determinism  # same checksum in Chromium, Firefox and WebKit as in Node
+npm run test:determinism  # same checksum in Chromium, Firefox and WebKit as in Node, also through the worker
 ```
 
 The determinism check runs in CI on Linux and macOS. Run `npx playwright install` once to get the browsers locally.

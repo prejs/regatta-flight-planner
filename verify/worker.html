@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Solver worker check</title>
+</head>
+<body>
+  <!-- Dev-only page driven by tests/worker.spec.ts. Not part of the app build. -->
+  <script type="module">
+    import { PlanSolver } from '../src/plan/solver-client.ts';
+    const solver = new PlanSolver();
+    const run = (fragment) =>
+      solver.solve(fragment).then(
+        ({ solution, ms }) => ({ checksum: solution.checksum, metrics: solution.metrics, ms }),
+        (e) => ({ error: e.name === 'Error' ? e.message : e.name })
+      );
+    window.solveUrl = run;
+    // Starts one plan, then a second before the first is done.
+    window.solveTwice = (first, second) => Promise.all([run(first), run(second)]);
+    window.solverReady = true;
+  </script>
+</body>
+</html>
