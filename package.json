@@ -13,7 +13,7 @@
     "start-remote": "vite --host",
     "solve": "tsx scripts/solve.ts",
     "icons": "tsx scripts/render-icons.ts",
-    "test": "tsx --test src/solver/*.test.ts",
+    "test": "tsx --test src/solver/*.test.ts src/plan/*.test.ts",
     "test:determinism": "playwright test"
   },
   "author": "@prejs",
