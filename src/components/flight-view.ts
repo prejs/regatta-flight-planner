@@ -155,7 +155,7 @@ export class FlightView extends LitElement {
   @property({ attribute: false }) derived?: Derived;
   /** idle[flight][race], from idleBoats(). */
   @property({ attribute: false }) idle: IdleBoat[][][] = [];
-  /** Number races within each flight (1..R) instead of across the day. */
+  /** Number races within each flight (flight.race, such as 2.1) instead of across the day. */
   @state() private perFlight = false;
 
   render() {
@@ -200,7 +200,7 @@ export class FlightView extends LitElement {
                 </thead>
                 <tbody>
                   ${flight.map((race, r) =>
-                    this.renderRace(race, this.perFlight ? r + 1 : f * d.races + r + 1, this.idle[f]?.[r] ?? [], boats)
+                    this.renderRace(race, this.perFlight ? `${f + 1}.${r + 1}` : String(f * d.races + r + 1), this.idle[f]?.[r] ?? [], boats)
                   )}
                 </tbody>
               </table>
@@ -210,7 +210,7 @@ export class FlightView extends LitElement {
       )}`;
   }
 
-  private renderRace(race: Race, n: number, idle: IdleBoat[], boats: number[]) {
+  private renderRace(race: Race, n: string, idle: IdleBoat[], boats: number[]) {
     return html`<tr>
       <th scope="row">${n}</th>
       ${boats.map((b) => {

@@ -21,17 +21,33 @@ test('the form makes a plan link and the flight view shows it', async ({ page })
   await expect(page.getByRole('heading', { name: /^Flight \d$/ })).toHaveCount(3);
   await expect(page.getByRole('cell', { name: /^Idle, kept by T\d$/ }).first()).toBeVisible();
 
-  // Two races per flight: flight 2 starts with race 3, or race 1 within the flight.
+  // Two races per flight: flight 2 starts with race 3, or race 2.1 within the flight.
   const flight2 = page.locator('flight-view section').nth(1);
   await expect(flight2.getByRole('rowheader').first()).toHaveText('3');
   await page.getByLabel('Number races within each flight').check();
-  await expect(flight2.getByRole('rowheader').first()).toHaveText('1');
+  await expect(flight2.getByRole('rowheader').first()).toHaveText('2.1');
 
-  // The link alone restores the plan and the form.
+  // The link alone restores the plan and the form, now from the saved plans.
   await page.reload();
-  await expect(page.getByText(`#${expected.checksum}`)).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByText(`#${expected.checksum}`)).toBeVisible();
+  await expect(page.getByText('Saved', { exact: true })).toBeVisible();
   await page.getByText('Plan settings').click();
   await expect(page.getByLabel('Teams')).toHaveValue('7');
+  await expect(page.getByText('Solved before on this device')).toBeVisible();
+
+  // The start screen lists it.
+  await page.goto('/');
+  await page.getByRole('link', { name: new RegExp(`#${expected.checksum}`) }).click();
+  await expect(page).toHaveURL(new RegExp(`#${fragment.replace(/\./g, '\\.')}$`));
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Forget saved plans' }).click();
+  await expect(page.getByText('Recent plans')).toBeHidden();
+});
+
+test('a link opens with the settings closed', async ({ page }) => {
+  await page.goto('/#0.t7b4.f3-3.oOBRK.K7QX2M');
+  await expect(page.locator('details')).not.toHaveAttribute('open');
+  await expect(page.locator('flight-view')).toBeVisible({ timeout: 20_000 });
 });
 
 test('an invalid link shows the reason', async ({ page }) => {
@@ -53,7 +69,6 @@ test('boats in use step from the default and change the races per flight', async
 });
 
 test('a link with custom boats in use fills the form with them', async ({ page }) => {
-  // The settings stay open while the plan solves.
   await page.goto('/#0.t17b7a5.f2-2.oOBGRK.K7QX2M');
   await expect(page.getByLabel('Boats in use')).toHaveValue('5');
 });

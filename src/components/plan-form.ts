@@ -1,9 +1,10 @@
 import { LitElement, css, html } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 
-import { Anchor, ChevronDown, ChevronUp, Cog, Dices, Flag, KeyRound, ListOrdered, Sailboat, Ship, Users } from 'lucide';
+import { Anchor, ChevronDown, ChevronUp, Cog, History, Dices, Flag, KeyRound, ListOrdered, Sailboat, Ship, Users } from 'lucide';
 
 import { newSeed } from '../plan/seed';
+import { planKey } from '../plan/cache';
 import { CURRENT_VERSION, encodePlanUrl, MAX_BOATS, MAX_FLIGHTS, MAX_TEAMS, type PlanSpec } from '../plan/url';
 import { DEFAULT_ORDER, derive, type Derived, type ObjectiveCode } from '../solver/model';
 import { styles } from '../styles/shared-styles';
@@ -181,6 +182,10 @@ export class PlanForm extends LitElement {
       .error {
         color: var(--danger);
       }
+      .hint.saved {
+        margin: -8px 0 0;
+        text-align: center;
+      }
       /* Make plan fills with the progress of the plan being solved. */
       button[type='submit'] {
         position: relative;
@@ -233,6 +238,8 @@ export class PlanForm extends LitElement {
   @property({ type: Number }) progress?: number;
   /** The fragment being solved or shown. Make plan says Solving while the inputs match it. */
   @property() current?: string;
+  /** Plan keys of the plans saved on this device: they open without solving. */
+  @property({ attribute: false }) saved = new Set<string>();
 
   @state() private teams = 17;
   @state() private boats = 7;
@@ -391,11 +398,13 @@ export class PlanForm extends LitElement {
     // Changed inputs make a new plan, which replaces the one being solved.
     const same = solving && 'fragment' in built && built.fragment === this.current;
     const percent = Math.round((this.progress ?? 0) * 100);
+    const saved = !solving && 'fragment' in built && this.saved.has(planKey(built.fragment));
     return html`<button type="submit" class=${solving ? 'solving' : ''} ?disabled=${'error' in built}
       style=${solving ? `--progress:${this.progress}` : ''}>
       ${solving ? html`<span class="fill"></span>` : ''}
-      ${icon(Cog, solving ? 'icon spin' : 'icon')}${same ? `Solving… ${percent}%` : 'Make plan'}
+      ${icon(saved ? History : Cog, solving ? 'icon spin' : 'icon')}${same ? `Solving… ${percent}%` : 'Make plan'}
     </button>
+    ${saved ? html`<p class="hint saved">Solved before on this device: the plan opens at once.</p>` : ''}
     ${solving ? html`<progress class="sr" aria-label="Solving" max="100" .value=${percent}></progress>` : ''}`;
   }
 
