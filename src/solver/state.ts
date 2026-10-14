@@ -7,7 +7,13 @@ export type Metrics = Record<ObjectiveCode, number>;
  * so the result is identical on every device.
  *
  * O and B are kept incrementally through addRace. G, R and K depend on the race
- * sequence, so scan() recomputes them in one pass.
+ * sequence, so scan() recomputes them in one pass, along with the orphaned
+ * boats (a hard constraint, not an objective).
+ *
+ * Races start back to back all day, flights included. With the idle boat on
+ * the water, its keeper is whoever was on it in the race before: the team that
+ * sailed it, or the keeper who stayed on it. When that team races now on
+ * another boat, the idle boat has nobody on it: it is orphaned.
  */
 export class PlanState {
   /** Pair meeting counts, indexed low * teams + high. */
@@ -18,6 +24,8 @@ export class PlanState {
   O = 0;
   /** Sum of squared team-boat counts. */
   B = 0;
+  /** Orphaned idle boats, from the last metrics() call. Must be 0 in a plan. */
+  orphans = 0;
 
   constructor(
     readonly d: Derived,
@@ -57,28 +65,30 @@ export class PlanState {
     }
   }
 
-  /** G (gap penalty), R (boat reuse) and K (keeper balance) over the current plan. */
-  private scan(): { G: number; R: number; K: number } {
+  /** G (gap penalty), R (boat reuse), K (keeper balance) and orphaned boats over the current plan. */
+  private scan(): { G: number; R: number; K: number; orphans: number } {
     const { teams, boats, active } = this.d;
     const lastRace = new Int32Array(teams).fill(-1000);
     const lastBoat = new Int32Array(teams).fill(-1);
     const lastUse = new Int32Array(boats).fill(-1000);
-    const prevUser = new Int32Array(boats).fill(-1);
-    const nowUser = new Int32Array(boats);
+    /** Who is on each boat after the race before: its crew or its keeper, or -1. */
+    const onBoard = new Int32Array(boats).fill(-1);
+    const nowOnBoard = new Int32Array(boats);
     const inRace = new Int32Array(teams).fill(-1);
     const duty = new Int32Array(teams);
     let G = 0;
     let R = 0;
+    let orphans = 0;
     let n = 0;
 
     for (const flight of this.plan) {
       for (const race of flight) {
-        nowUser.fill(-1);
+        nowOnBoard.fill(-1);
         for (let i = 0; i < race.teams.length; i++) {
           const t = race.teams[i];
           const b = race.boats[i];
           inRace[t] = n;
-          nowUser[b] = t;
+          nowOnBoard[b] = t;
           const gap = n - lastRace[t] - 1;
           if (gap === 0 && lastBoat[t] !== b) R++;
           if (gap === 1 && this.gapActive) {
@@ -88,11 +98,17 @@ export class PlanState {
             G += kept ? 1 : 2;
           }
         }
-        if (this.idleOnWater && n > 0) {
+        if (this.idleOnWater) {
           for (let b = 0; b < active; b++) {
-            if (nowUser[b] >= 0) continue;
-            const u = prevUser[b];
-            if (u >= 0 && inRace[u] !== n) duty[u]++;
+            if (nowOnBoard[b] >= 0) continue;
+            const u = onBoard[b];
+            if (u < 0) continue;
+            if (inRace[u] === n) {
+              orphans++;
+            } else {
+              duty[u]++;
+              nowOnBoard[b] = u;
+            }
           }
         }
         for (let i = 0; i < race.teams.length; i++) {
@@ -101,18 +117,20 @@ export class PlanState {
           lastBoat[t] = race.boats[i];
           lastUse[race.boats[i]] = n;
         }
-        prevUser.set(nowUser);
+        onBoard.set(nowOnBoard);
         n++;
       }
     }
 
     let K = 0;
     for (let t = 0; t < teams; t++) K += duty[t] * duty[t];
-    return { G, R, K };
+    return { G, R, K, orphans };
   }
 
   metrics(): Metrics {
-    return { O: this.O, B: this.B, ...this.scan() };
+    const { G, R, K, orphans } = this.scan();
+    this.orphans = orphans;
+    return { O: this.O, B: this.B, G, R, K };
   }
 }
 

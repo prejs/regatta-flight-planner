@@ -63,6 +63,34 @@ Leads, all of which keep the plan identical:
 - **Local rescans.** A move in flight f changes G, R and K only near flight f (its races, the seams on both sides, the keeper of the next race). Rescan that window instead of the whole plan.
 
 Removing the full scan alone gives at most about 3.4 times, so the phone target of about 10 times still needs better moves or a structured start.
+With the keeper rule below, a keeper can stay on an idle boat for several races, so a local rescan has to follow the boat until someone sails it again.
+
+## Orphaned boats: a hard constraint
+
+Races start back to back all day; a flight change is not a break. With the idle boat on the water, its keeper is the team on it in the race before: its crew, or its keeper if it was idle then too.
+When that team races now on another boat, nobody can stay on the idle boat: it is **orphaned**. The app showed these as "idle at the dock".
+
+They happened only where flights meet: a team sails the last race of a flight and the first of the next, changes boats, and its old boat sits out.
+Nothing scored them, and the boat change that would fix one raises boat balance (B), which ranks above boat reuse (R).
+Before the fix, the 4 cases that had orphans had 1–5 each; `#0.t17b7.f3-15.oOGBRK.SJ4B90` had 5.
+
+The fix:
+
+- `PlanState.scan` tracks who is on each boat after every race, so a keeper carries over when a boat is idle twice in a row (before, the keeper was lost and K undercounted), and it counts orphans.
+- Orphans are a constraint, not an objective. New flights are repaired (each orphaned boat goes back to its last crew), and the search rejects any move that creates one.
+
+Rejecting moves and repairing after each move (the move plus its repair counted as one move) gave the same quality within noise on 8 cases, 2 better each way.
+Rejection is simpler and costs about 3–5% more time than before, against 5–15% for repair. K is higher than before because keeper duty is now counted for every race a keeper stays on a boat.
+
+| Link | Before: O B G R K, orphans | After: O B G R K, orphans |
+|---|---|---|
+| `t17b7.f3-15 SJ4B90` | 2706 663 73 28 12, **5** | 2704 665 77 24 19, 0 |
+| `t17b7.f9-15 K7QX2M` | 2698 663 71 5 13, **1** | 2700 663 62 8 15, 0 |
+| `t7b4.f3-3 K7QX2M` | 45 21 0 3 1, **2** | 45 21 0 3 2, 0 |
+| `t9b5.f4-6 K7QX2M` | 276 72 0 8 1, **4** | 276 72 0 7 8, 0 |
+| `t13b5.f6-8 K7QX2M` | 420 184 22 4 17, 0 | 422 182 21 8 24, 0 |
+
+The other three cases had no orphans and did not change.
 
 ## Conclusions
 

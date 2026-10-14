@@ -36,10 +36,12 @@ export function solve(input: PlanInput, onProgress?: Progress): Solution {
   const tick = onProgress && ((n: number) => onProgress((done += n), total));
 
   for (let f = 0; f < input.minFlights; f++) addFlight(state, rng);
+  repair(state);
   anneal(state, input, 0, input.minFlights, input.iterations, rng, tick);
 
   for (let f = input.minFlights; f < input.maxFlights; f++) {
     addFlight(state, rng);
+    repair(state);
     anneal(state, input, f, f + 1, extension, rng, tick);
   }
 
@@ -85,6 +87,40 @@ function swapBoats(state: PlanState, race: Race, i: number, j: number): void {
   state.addRace(race, -1);
   [race.boats[i], race.boats[j]] = [race.boats[j], race.boats[i]];
   state.addRace(race, 1);
+}
+
+/**
+ * Gives every orphaned boat back to the team on it in the race before, which
+ * idles the boat that team was given instead (and so on, if that one is
+ * orphaned too). Only boats change, never who races whom. Run on new flights,
+ * which start out random, so the search starts without orphans.
+ */
+function repair(state: PlanState): void {
+  const { boats, active, teams } = state.d;
+  if (!state.idleOnWater) return;
+  const onBoard = new Int32Array(boats).fill(-1);
+  const now = new Int32Array(boats);
+  const seat = new Int32Array(teams);
+  for (const flight of state.plan) {
+    for (const race of flight) {
+      seat.fill(-1);
+      race.teams.forEach((t, i) => (seat[t] = i));
+      for (let fixed = true; fixed; ) {
+        fixed = false;
+        now.fill(-1);
+        race.teams.forEach((t, i) => (now[race.boats[i]] = t));
+        for (let b = 0; b < active; b++) {
+          const u = onBoard[b];
+          if (now[b] >= 0 || u < 0 || seat[u] < 0) continue;
+          setBoat(state, race, seat[u], b);
+          fixed = true;
+          break;
+        }
+      }
+      for (let b = 0; b < active; b++) if (now[b] < 0 && onBoard[b] >= 0) now[b] = onBoard[b];
+      onBoard.set(now);
+    }
+  }
 }
 
 /** Boats of the active set that this race does not use, or -1 when there is none. */
@@ -161,6 +197,11 @@ function anneal(
     if (!undo) continue;
 
     const next = tuple(state.metrics(), order);
+    if (state.orphans > 0) {
+      // A hard constraint: the search only moves between plans without orphaned boats.
+      undo();
+      continue;
+    }
     const cmp = compareTuples(next, cur);
     let accept = cmp <= 0;
     if (!accept && temp > 0) {
