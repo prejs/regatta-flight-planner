@@ -1,9 +1,24 @@
 import { css } from 'lit';
 
-// these styles can be imported from any component
+// Styles shared by the components: icons next to text, cards, screen-reader text.
 export const styles = css`
-  main {
-    margin-top: 34px;
-    padding: 12px;
+  .icon {
+    vertical-align: -0.15em;
+    margin-right: 6px;
+    flex: none;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+  }
+  .sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 `;

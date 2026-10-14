@@ -1,36 +1,68 @@
-
 /*
-  This file is used for all of your global styles and CSS variables.
-  Check here https://developer.mozilla.org/en-US/docs/Web/CSS/Using_CSS_custom_properties for more info on using CSS variables.
+  Design tokens. Custom properties inherit into the components' shadow roots,
+  so every component styles itself from these.
 */
 :root {
-  --font-family: sans-serif;
-  /* Native form controls follow the light or dark theme. */
   color-scheme: light dark;
-}
 
-html, body {
-  font-family: var(--font-family);
-  padding: 0;
-  margin: 0;
+  --font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  /* Type scale: small for labels and notes, base for content and controls. */
+  --fs-sm: 0.875rem;
+  --fs-base: 1rem;
+  --fs-lg: 1.125rem;
 
-  height: 100%;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --gutter: 16px;
+
+  --bg: #f4f5f9;
+  --surface: #ffffff;
+  --surface-2: #eef0f6;
+  --text: #16172b;
+  --muted: #5d6075;
+  --border: #d9dbe6;
+  --accent: #3539c6;
+  --accent-soft: #e6e7fb;
+  --on-accent: #ffffff;
+  --danger: #c4161d;
+  --shadow: 0 1px 2px #16172b0f, 0 2px 8px #16172b0a;
+  --tip-bg: #16172b;
+  --tip-text: #ffffff;
+  /* The unfilled part of Make plan while solving. */
+  --accent-track: color-mix(in srgb, var(--accent), #000 45%);
+  --swatch-ring: #0003;
 }
 
 @media (prefers-color-scheme: dark) {
-
-  html,
-  body {
-    background-color: #181818;
-    color: white;
+  :root {
+    --bg: #121320;
+    --surface: #1c1d2e;
+    --surface-2: #26283c;
+    --text: #ececf4;
+    --muted: #a3a5bb;
+    --border: #35374f;
+    --accent: #8e91ff;
+    --accent-soft: #2c2e5a;
+    --on-accent: #10112a;
+    --danger: #ff7a7f;
+    --shadow: 0 1px 2px #0006;
+    --tip-bg: #ececf4;
+    --tip-text: #16172b;
+    --accent-track: color-mix(in srgb, var(--accent) 50%, var(--surface-2));
+    --swatch-ring: #fff6;
   }
 }
 
-@media (prefers-color-scheme: light) {
-
-  html,
-  body {
-    background-color: #f5f5f5;
-    color: black;
-  }
+html,
+body {
+  font-family: var(--font-family);
+  font-size: 16px;
+  line-height: 1.4;
+  padding: 0;
+  margin: 0;
+  min-height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-text-size-adjust: 100%;
 }
